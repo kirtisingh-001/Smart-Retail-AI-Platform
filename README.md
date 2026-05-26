@@ -26,41 +26,6 @@ The application is deployed on \*\*Azure App Service / Azure Web App\*\*.
 
 
 
-\### Live Application URL
-
-
-
-```text
-
-https://smart-retail-api3-hkc0dsadcnfqcmaa.koreacentral-01.azurewebsites.net
-
-```
-
-
-
-\### Live Swagger API Documentation
-
-
-
-```text
-
-https://smart-retail-api3-hkc0dsadcnfqcmaa.koreacentral-01.azurewebsites.net/docs
-
-```
-
-
-
-\### Live Health Check
-
-
-
-```text
-
-https://smart-retail-api3-hkc0dsadcnfqcmaa.koreacentral-01.azurewebsites.net/health
-
-```
-
-
 
 The multi-agent system is live and executable through:
 
