@@ -1,3 +1,18 @@
+# type: ignore
+
+"""
+Databricks Retail Data Engineering Pipeline
+
+This file is designed to run inside Azure Databricks.
+Databricks automatically provides:
+- spark session
+- display() function
+
+Flow:
+RAW CSV -> STAGED PARQUET -> CURATED PARQUET -> SPARK SQL OUTPUT
+"""
+
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
     when,
@@ -10,15 +25,29 @@ from pyspark.sql.functions import (
     sum as spark_sum
 )
 
-# ==================================================
+# Spark Session
+try:
+    spark
+except NameError:
+    spark = SparkSession.builder.appName("SmartRetailDataPipeline").getOrCreate()
+
+
+def show_data(df, title):
+    print(title)
+    try:
+        display(df)
+    except NameError:
+        df.show(20, truncate=False)
+
+
 # Azure Storage Configuration
-# ==================================================
 
 storage_account = "smartstorage321"
 
-# NOTE:
-# In Databricks notebook, paste storage key directly only for demo
-# OR use Databricks secrets in production.
+# Use Databricks secrets in real deployment.
+# Example:
+# storage_key = dbutils.secrets.get(scope="retail-scope", key="storage-key")
+
 storage_key = "PASTE_STORAGE_ACCOUNT_KEY_IN_DATABRICKS_ONLY"
 
 spark.conf.set(
@@ -31,9 +60,7 @@ staged_path = f"wasbs://staged@{storage_account}.blob.core.windows.net/retail_sa
 curated_path = f"wasbs://curated@{storage_account}.blob.core.windows.net/retail_sales_curated_parquet"
 sql_output_path = f"wasbs://curated@{storage_account}.blob.core.windows.net/sql_analytics_parquet"
 
-# ==================================================
-# Raw Layer
-# ==================================================
+# RAW Layer
 
 raw_df = (
     spark.read
@@ -42,13 +69,11 @@ raw_df = (
     .csv(raw_path)
 )
 
-print("========== RAW DATA ==========")
-display(raw_df)
+show_data(raw_df, "========== RAW DATA ==========")
 
-# ==================================================
-# Staged Layer
+# STAGED Layer
 # Cleaning + Feature Engineering
-# ==================================================
+
 
 staged_df = (
     raw_df
@@ -63,17 +88,16 @@ staged_df = (
     )
 )
 
-print("========== STAGED DATA ==========")
-display(staged_df)
+show_data(staged_df, "========== STAGED DATA ==========")
 
 staged_df.write.mode("overwrite").parquet(staged_path)
 
 print("Staged parquet saved successfully!")
 
-# ==================================================
-# Curated Layer
+
+# CURATED Layer
 # Aggregated Analytics-Ready Data
-# ==================================================
+
 
 curated_df = (
     staged_df
@@ -88,16 +112,15 @@ curated_df = (
     .orderBy(col("total_sales").desc())
 )
 
-print("========== CURATED DATA ==========")
-display(curated_df)
+show_data(curated_df, "========== CURATED DATA ==========")
 
 curated_df.write.mode("overwrite").parquet(curated_path)
 
 print("Curated parquet saved successfully!")
 
-# ==================================================
+
 # Spark SQL Analytics
-# ==================================================
+
 
 staged_df.createOrReplaceTempView("sales_table")
 
@@ -113,19 +136,18 @@ GROUP BY product, category
 ORDER BY total_sales DESC
 """)
 
-print("========== SPARK SQL ANALYTICS ==========")
-display(sql_result)
+show_data(sql_result, "========== SPARK SQL ANALYTICS ==========")
 
 sql_result.write.mode("overwrite").parquet(sql_output_path)
 
 print("SQL analytics parquet saved successfully!")
 
-# ==================================================
+
 # Final Status
-# ==================================================
+
 
 print("DATA ENGINEERING PIPELINE COMPLETED SUCCESSFULLY")
-print("RAW → STAGED → CURATED flow completed")
+print("RAW -> STAGED -> CURATED flow completed")
 print("Staged parquet path:", staged_path)
 print("Curated parquet path:", curated_path)
 print("SQL analytics parquet path:", sql_output_path)
